@@ -1,0 +1,31 @@
+pipeline {
+    agent any
+    options { timestamps () }
+    stages {
+        stage('AIO560Template_to_VM') {
+            steps {
+                vSphere buildStep: [$class: 'Clone', clone: 'AIO560', cluster: 'Keonics_EM_Private', customizationSpec: '', datastore: 'HP3PAR_EM_PVT_01', folder: 'VM_Deployed/SP5', linkedClone: false, powerOn: false, resourcePool: 'Resources', sourceName: 'AIO560TEMP', timeoutInSeconds: 60], serverName: 'SP5_Vsphere'
+            }
+        }
+        stage('AIO560_VM_Power_ON') {
+            steps {
+                vSphere buildStep: [$class: 'PowerOn', timeoutInSeconds: 60, vm: 'AIO560'], serverName: 'SP5_Vsphere'
+            }
+        }
+        stage('UI560Template_to_VM') {
+            steps {
+                vSphere buildStep: [$class: 'Clone', clone: 'UI560', cluster: 'Keonics_EM_Private', customizationSpec: '', datastore: 'HP3PAR_EM_PVT_01', folder: 'VM_Deployed/SP5', linkedClone: false, powerOn: false, resourcePool: 'Resources', sourceName: 'UI560TEMP', timeoutInSeconds: 60], serverName: 'SP5_Vsphere'
+            }
+        }
+        stage('UI560_VM_Power_ON') {
+            steps {
+                vSphere buildStep: [$class: 'PowerOn', timeoutInSeconds: 60, vm: 'UI560'], serverName: 'SP5_Vsphere'
+            }
+        }
+    }
+    post ('clean_WS') {
+        always {
+            cleanWs()
+        }
+    }
+}
