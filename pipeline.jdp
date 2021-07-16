@@ -1,0 +1,60 @@
+def user
+node {
+  wrap([$class: 'BuildUser']) {
+    user = env.BUILD_USER_ID
+  }
+  emailext mimeType: 'text/html',
+                 subject: "Waiting for your Approval! Job: '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
+                 to: "xxxxxxx@gmail.com",
+                 body: '''<a href="${BUILD_URL}input">click to approve</a>'''
+}
+pipeline {
+ agent any
+ stages {
+  stage('Pull-Code_main') {
+   steps {
+    git branch: 'main', credentialsId: 'tfs-creadxxxxxx', url: 'http://xxxxxxxxxxxx/tfs/xxxxxxxxxxxxx'
+   }
+  }
+  stage('Clean') {
+   steps{
+    bat "dotnet clean Sample.csproj"
+   }
+  }
+  stage('SonarQube analysis and Build')  {
+   steps {
+    withSonarQubeEnv('SonarQube') {
+     	bat 'dotnet sonarscanner begin /k:"ASPDotNet_Pipeine_main" /d:sonar.host.url="http://localhost:9000" /d:sonar.login="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"'
+     	bat 'dotnet build'
+        bat 'dotnet sonarscanner end /d:sonar.login="xxxxxxxxxxxxxxxxxxxxxxxxx"'
+    }
+   }
+  }
+  stage("Quality Gate") {
+   steps {
+    timeout(time: 1, unit: 'MINUTES') {
+        waitForQualityGate abortPipeline: true
+    }
+   }
+  }
+  stage('Waiting for Lead Approval') {
+   input {
+        message "Should we continue?"
+        }
+   steps {
+        echo 'Admin approved the request.'
+   }
+  }
+  stage('Publish') {
+   steps {
+    bat 'dotnet publish -o ../ASPNET_Published_Main'
+   }
+  }
+  stage('Email-Notification') {
+   steps {
+    emailext attachLog: true, body: '''$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:
+    Check console output at $BUILD_URL to view the results.''', subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!', to: 'linuthakre18@gmail.com'
+   }
+  }
+ }
+}
