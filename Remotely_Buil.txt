@@ -1,0 +1,12 @@
+Build Jenkins job remotely script 
+
+1.build trigger-Bitbucket Webhook trigger(push event)
+2. SCM - choose BB server with branch specifier as :^(.develop$|. master$)
+
+export branchname=`git name-rev --name-only HEAD | sed -n -e 's/^.*\///p'`
+export Git_REVISION=`git rev-parse HEAD`
+if git diff --name-only HEAD~1 | grep -q -E "common | payment/"
+then
+echo $branchname
+curl -u $user:$passwd -FSubmit=Build "Build url with token&branch="$branchname"
+fi
